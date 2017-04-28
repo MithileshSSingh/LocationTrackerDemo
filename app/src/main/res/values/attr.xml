@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="app">
+        <attr name="customFont" format="string" />
+        <attr name="posX" format="integer"></attr>
+        <attr name="posY" format="integer"></attr>
+    </declare-styleable>
+
+
+    <declare-styleable name="CustomStage">
+        <attr name="current_stage_text" format="string" />
+        <attr name="next_stage_text" format="string" />
+        <attr name="current_stage_bg_color" format="color" />
+        <attr name="next_stage_bg_color" format="color" />
+        <attr name="current_stage_text_color" format="color" />
+        <attr name="next_stage_text_color" format="color" />
+        <attr name="next_stage_indicator" format="integer" />
+        <attr name="direction" format="integer" />
+    </declare-styleable>
+</resources>
