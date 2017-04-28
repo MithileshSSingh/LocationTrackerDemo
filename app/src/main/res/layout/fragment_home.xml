@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/llMapLayout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -17,7 +17,17 @@
             android:name="com.google.android.gms.maps.SupportMapFragment"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
-    </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvTotalTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@android:color/white"
+            android:padding="5dp"
+            android:textColor="@color/colorPrimary" />
+
+    </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/llSwipeButtonLayout"

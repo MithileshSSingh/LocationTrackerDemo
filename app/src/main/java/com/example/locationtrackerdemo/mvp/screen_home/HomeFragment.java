@@ -12,12 +12,12 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresPermission;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.locationtrackerdemo.R;
@@ -50,7 +50,7 @@ import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -93,6 +93,8 @@ public class HomeFragment extends BaseFragment implements HomeContract.View, Hom
     private CustomStageButton btnStartTracking;
     private CustomStageButton btnStopTracking;
 
+    private TextView tvTotalTime;
+
     private GoogleMap mGoogleMap;
     private GoogleApiClient mGoogleApiClient;
     private SupportMapFragment mMapFragment;
@@ -117,15 +119,11 @@ public class HomeFragment extends BaseFragment implements HomeContract.View, Hom
     protected void initView() {
         btnStartTracking = (CustomStageButton) mView.findViewById(R.id.btnStartTracking);
         btnStopTracking = (CustomStageButton) mView.findViewById(R.id.btnStopTracking);
+        tvTotalTime = (TextView) mView.findViewById(R.id.tvTotalTime);
     }
 
     @Override
     protected void initMembers() {
-        if (AppPref.getInstance(mActivity).getBoolean(AppPref.Keys.IS_TRACKING)) {
-            startLocationTracking(true);
-        } else {
-            startLocationTracking(false);
-        }
     }
 
     @Override
@@ -182,11 +180,13 @@ public class HomeFragment extends BaseFragment implements HomeContract.View, Hom
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         initGoogleMap();
+        getDeviceLocation();
+
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-
+        mGoogleApiClient.connect();
     }
 
     private void initGoogleMap() {
@@ -241,11 +241,16 @@ public class HomeFragment extends BaseFragment implements HomeContract.View, Hom
     private void startLocationTracking(boolean isStartTracking) {
 
         if (isStartTracking) {
+            tvTotalTime.setVisibility(View.GONE);
             btnStartTracking.setVisibility(View.GONE);
             btnStopTracking.setVisibility(View.VISIBLE);
             btnStopTracking.enabled(true);
             startLocationUpdateService();
+            if (mGoogleMap != null) {
+                mGoogleMap.clear();
+            }
         } else {
+            tvTotalTime.setVisibility(View.VISIBLE);
             btnStartTracking.setVisibility(View.VISIBLE);
             btnStopTracking.setVisibility(View.GONE);
             btnStartTracking.enabled(true);
@@ -298,13 +303,24 @@ public class HomeFragment extends BaseFragment implements HomeContract.View, Hom
                         PolylineOptions green = new PolylineOptions().color(Color.GREEN).clickable(true).addAll(listLatLng).geodesic(true);
                         PolylineOptions red = new PolylineOptions().color(Color.RED).clickable(true).addAll(listLatLng);
 
-                        mGoogleMap.addPolyline(green);
-                        mGoogleMap.addPolyline(red);
+                        Polyline polylineGreen = mGoogleMap.addPolyline(green);
+                        Polyline polylineRed = mGoogleMap.addPolyline(red);
 
                         LatLngBounds latLngBounds = builder.build();
                         mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(latLngBounds, 18));
                     }
                 }
+
+
+                long startTime = AppPref.getInstance(mActivity).getLong(AppPref.Keys.START_TIME);
+                long endTime = AppPref.getInstance(mActivity).getLong(AppPref.Keys.END_TIME);
+                long totalTime = endTime - startTime;
+
+                int hr = (int) (totalTime / (60 * 60 * 1000));
+                int min = (int) (totalTime / (60 * 1000));
+
+                tvTotalTime.setVisibility(View.VISIBLE);
+                tvTotalTime.setText(String.valueOf("Total Time : " + hr + "h " + min + "m"));
             }
 
             @Override
@@ -324,12 +340,16 @@ public class HomeFragment extends BaseFragment implements HomeContract.View, Hom
 
         switch (direction) {
             case CustomStageButton.SWIPE_RIGHT:
+                Date startTime = new Date();
                 deleteAllLocationFromDB();
                 AppPref.getInstance(mActivity).putBoolean(AppPref.Keys.IS_TRACKING, true);
+                AppPref.getInstance(mActivity).putLong(AppPref.Keys.START_TIME, startTime.getTime());
                 startLocationTracking(true);
                 break;
             case CustomStageButton.SWIPE_LEFT:
+                Date endTime = new Date();
                 AppPref.getInstance(mActivity).putBoolean(AppPref.Keys.IS_TRACKING, false);
+                AppPref.getInstance(mActivity).putLong(AppPref.Keys.END_TIME, endTime.getTime());
                 startLocationTracking(false);
                 break;
         }
@@ -377,6 +397,12 @@ public class HomeFragment extends BaseFragment implements HomeContract.View, Hom
 
         updateLocationUI();
         getDeviceLocation();
+
+        if (AppPref.getInstance(mActivity).getBoolean(AppPref.Keys.IS_TRACKING)) {
+            startLocationTracking(true);
+        } else {
+            startLocationTracking(false);
+        }
     }
 
     private void updateLocationUI() {
@@ -420,10 +446,12 @@ public class HomeFragment extends BaseFragment implements HomeContract.View, Hom
         mLocationPermissionGranted = true;
         mLastKnownLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
+        Log.v("LastKnownLocation", String.valueOf(mLastKnownLocation));
         if (mLastKnownLocation != null) {
             mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
                     new LatLng(mLastKnownLocation.getLatitude(),
                             mLastKnownLocation.getLongitude()), 15));
+            mGoogleMap.setMyLocationEnabled(true);
         }
     }
 

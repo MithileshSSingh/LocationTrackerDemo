@@ -29,6 +29,8 @@ public class AppPref {
      */
     public static class Keys {
         public static final String IS_TRACKING = "is_traking";
+        public static final String START_TIME = "start_time";
+        public static final String END_TIME = "end_time";
     }
 
     public void putString(String key, String value) {
